@@ -7,7 +7,7 @@ import { FireBaseModule } from './firebase/firebase.module';
 import { LiveModule } from './live/live.module';
 
 @Module({
-  imports: [ScheduleModule.forRoot(), ConfigModule.forRoot(), BinanceModule, FireBaseModule, UniswapV3Module, LiveModule],
+  imports: [ScheduleModule.forRoot(), ConfigModule.forRoot(), FireBaseModule, LiveModule],
   controllers: [AppController],
   providers: [AppService],
 })

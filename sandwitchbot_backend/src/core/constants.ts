@@ -1,42 +1,75 @@
-import { IToken } from 'src/types/token.interface';
+require("dotenv").config();
+import TokenProps from "./types/TokenProps";
+// const isMainnet = process.argv[2] == "mainnet";
+const isMainnet = 1;
+const chainId = isMainnet ? 1 : 5;
 
-export const QUOTER_CONTRACT_ADDRESS = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e';
-export const TOKEN_AMOUNT_TO_APPROVE_FOR_TRANSFER = 2000000;
-export const MAX_FEE_PER_GAS = 100000000000;
-export const MAX_PRIORITY_FEE_PER_GAS = 100000000000;
-export const POOL_FACTORY_CONTRACT_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
-export const V3_SWAP_ROUTER_ADDRESS = '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45';
-export const USDT_TOKEN: IToken = {
-  active: true,
-  address: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-  symbol: 'USDT',
-  decimals: 6,
+const privateKey = isMainnet
+  ? process.env.MAINNET_WALLET_PRIVATE_KEY
+  : process.env.TESTNET_WALLET_PRIVATE_KEY;
+
+const httpProviderUrl = isMainnet
+  ? process.env.MAINNET_NODE_URL
+  : process.env.TESTNET_NODE_URL;
+
+const wssProviderUrl = isMainnet
+  ? process.env.MAINNET_NODE_URL_WSS
+  : process.env.TESTNET_NODE_URL_WSS;
+
+const uniswapUniversalRouterAddress = isMainnet
+  ? "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD"
+  : "0x4648a43B2C14Da09FdF82B161150d3F634f40491";
+
+const uniswapV2RouterAddress = isMainnet
+  ? "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D"
+  : "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+
+const wETHAddress = isMainnet
+  ? "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+  : "0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6";
+
+const uniswapV2FactoryAddress = isMainnet
+  ? "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f"
+  : "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984";
+
+const gasBribe = process.env.GAS_BRIBE_IN_GWEI;
+const buyAmount = process.env.BUY_AMOUNT_IN_WEI;
+const gasLimit = process.env.GAS_LIMIT;
+
+const tokenList: TokenProps[] = [
+  {
+    address: "0x2D9D7c64F6c00e16C28595ec4EbE4065ef3A250b",
+    name: "GHY",
+    decimal: 9,
+    isTax: true,
+    isStable: true,
+    buyTax:20,
+    sellTax: 20,   
+  },
+  {
+    address: "0x2388821b40F3Ab780F09e97b42b7b577d37A6d5E",
+    name: "Grok X",
+    decimal: 18,
+    isTax: true,
+    isStable: true,
+    buyTax: 0,
+    sellTax:0,
+  },
+]
+
+
+export {
+  isMainnet,
+  chainId,
+  privateKey,
+  wssProviderUrl,
+  httpProviderUrl,
+  uniswapUniversalRouterAddress,
+  wETHAddress,
+  uniswapV2FactoryAddress,
+  uniswapV2RouterAddress,
+  gasBribe,
+  buyAmount,
+  gasLimit,
+  tokenList,
 };
-
-export const WETH_TOKEN: IToken = {
-  active: true,
-  address: '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
-  symbol: 'WETH',
-  decimals: 18,
-}
-
-export enum OrderDirection {
-  BUY = 'BUY',
-  SELL = 'SELL',
-}
-
-export const ERC20_ABI = [
-  // Read-Only Functions
-  'function balanceOf(address owner) view returns (uint256)',
-  'function decimals() view returns (uint8)',
-  'function symbol() view returns (string)',
-  'function totalSupply() public view returns (uint256)',
-  'function allowance(address _owner, address _spender) public view returns (uint256 remaining)',
-
-  // Authenticated Functions
-  'function transfer(address to, uint amount) returns (bool)',
-  'function approve(address _spender, uint256 _value) returns (bool)',
-
-  // Events
-  'event Transfer(address indexed from, address indexed to, uint amount)',
-];
