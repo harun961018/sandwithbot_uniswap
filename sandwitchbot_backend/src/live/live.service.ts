@@ -14,17 +14,13 @@ import { OrderSide } from 'src/utils/binance';
 import { IToken } from 'src/types/token.interface';
 import { toReadableAmount } from 'src/utils/uniswapV3';
 import { USDT_TOKEN, WETH_TOKEN } from '../core/constants';
-import { BinanceService } from 'src/binance/binance.service';
 import { FirebaseService } from '../firebase/firebase.service';
-import { UniswapV3Service } from 'src/uniswapV3/uniswapV3.service';
 import { BinanceAction, IHistory, Platform, TradeStatus } from 'src/types/history.interface';
 
 @Injectable()
 export class LiveService {
   constructor(
     private firebaseService: FirebaseService,
-    private binanceService: BinanceService,
-    private uniswapV3Service: UniswapV3Service,
     private schedulerRegistry: SchedulerRegistry,
   ) {}
   private readonly logger = new Logger(LiveService.name);

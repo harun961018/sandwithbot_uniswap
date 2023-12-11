@@ -340,7 +340,7 @@ const Display = ({ socket }) => {
             </Card.Body>
           </Card>
           <br />
-          <Card bg="light" style={{ height: '35rem', overflow: 'scroll' }} border="primary" overflow="scroll">
+          {/* <Card bg="light" style={{ height: '35rem', overflow: 'scroll' }} border="primary" overflow="scroll">
             <Card.Body>
               <Card.Title>
                 <h2>
@@ -353,7 +353,7 @@ const Display = ({ socket }) => {
               <br />
               <br />
             </Card.Body>
-          </Card>
+          </Card> */}
           <br />
           <Card bg="light" style={{ height: '30rem', overflow: 'scroll' }} border="primary">
             <Card.Body>

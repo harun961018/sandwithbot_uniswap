@@ -1,9 +1,9 @@
 import { BigNumber, ethers } from "ethers";
-import uniswapPairByteCode from "../bytecode/uniswapPairByteCode";
-import erc20ByteCode from "../bytecode/erc20ByteCode";
-import UniswapV2PairAbi from "../abi/UniswapV2Pair.json";
-import UniswapV2RouterAbi from "../abi/UniswapV2Router.json";
-import Erc20Abi from "../abi/ERC20.json";
+import uniswapPairByteCode from "./bytecode/uniswapPairByteCode";
+import erc20ByteCode from "./bytecode/erc20ByteCode";
+import UniswapV2PairAbi from "./abi/UniswapV2Pair.json";
+import UniswapV2RouterAbi from "./abi/UniswapV2Router.json";
+import Erc20Abi from "./abi/ERC20.json";
 import {
   gasBribe,
   buyAmount,
@@ -12,10 +12,10 @@ import {
   uniswapV2RouterAddress,
   wETHAddress,
   gasLimit
-} from "../constants";
-import DecodedTransactionProps from "../types/DecodedTransactionProps";
-import PairProps from "../types/PairProps";
-import AmountsProps from "../types/AmountsProps";
+} from "./core/constants";
+import DecodedTransactionProps from "./types/DecodedTransactionProps";
+import PairProps from "./types/PairProps";
+import AmountsProps from "./types/AmountsProps";
 
 const provider = ethers.getDefaultProvider(httpProviderUrl);
 const signer = new ethers.Wallet(privateKey!, provider);

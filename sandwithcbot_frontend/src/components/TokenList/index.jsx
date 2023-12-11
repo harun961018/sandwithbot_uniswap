@@ -10,6 +10,11 @@ const TokenList = ({ socket }) => {
   const dispatch = useDispatch();
   const appData = useSelector(state => state.app);
   const [address, setAddress] = useState('');
+  const [taxToken, setTaxToken] = useState(false);
+  const [buyTax, setBuyTax] = useState(0);
+  const [sellTax, setSellTax] = useState(0);
+  const [usdLimit, setUSDLimit] = useState(0);
+
   const [show, setShow] = useState(false);
   const [editModalVisiable, setEditModalVisiable] = useState(false);
   const [selectedToken, setSelectedToken] = useState();
@@ -25,6 +30,29 @@ const TokenList = ({ socket }) => {
     setAddress(e.target.value);
   };
 
+  const handleTaxToken = e => {
+    
+    if (e.target.checked) {
+      console.log("adssdf", e.target.checked)
+      setTaxToken(true)
+    } else {
+      setTaxToken(false)
+    }
+    
+  }
+
+  const handleBuyTax = e => {
+    setBuyTax(e.target.value)
+  }
+
+  const handleSellTax = e => {
+    setSellTax(e.target.value)
+  }
+
+  const handleUSDLimit = e => {
+    setUSDLimit(e.target.value)
+  }
+
   const addTokenList = () => {
     setShow(false);
     if (address === '') {
@@ -33,7 +61,14 @@ const TokenList = ({ socket }) => {
     } else {
       try {
         const checksumAddress = ethers.utils.getAddress(address);
-        dispatch(addToken(checksumAddress));
+        const tokenInfo = {
+          address: address,
+          taxToken: taxToken,
+          buyTax: buyTax,
+          sellTax: sellTax,
+          usdLimit: usdLimit
+        }
+        dispatch(addToken(tokenInfo));
       } catch (e) {
         alert('Invalid token address');
       }
@@ -60,7 +95,7 @@ const TokenList = ({ socket }) => {
   };
 
   const rows = appData.tokens.map(crypto => {
-    const row = { ...crypto };
+    const row = { ...crypto, taxToken: crypto.taxToken ? "true": "false" };
     row.actions = (
       <div>
         <Button
@@ -95,34 +130,25 @@ const TokenList = ({ socket }) => {
         field: 'symbol',
         width: 50,
       },
+      
       {
-        label: 'Token Address',
-        field: 'address',
-        width: 150,
-      },
-      {
-        label: 'Decimals',
-        field: 'decimals',
+        label: 'Buy Tax',
+        field: 'buyTax',
         width: 50,
       },
       {
-        label: 'Min Amount',
-        field: 'minAmount',
+        label: 'Sell Tax',
+        field: 'sellTax',
         width: 50,
       },
       {
-        label: 'Max Amount',
-        field: 'maxAmount',
+        label: 'Tax Token',
+        field: 'taxToken',
         width: 50,
       },
       {
-        label: 'Benefit Limit',
-        field: 'benefitLimit',
-        width: 50,
-      },
-      {
-        label: 'Monitoring Limit',
-        field: 'monitLimit',
+        label: 'USD Limit',
+        field: 'usdLimit',
         width: 50,
       },
       {
@@ -150,13 +176,35 @@ const TokenList = ({ socket }) => {
       <br />
       <Modal show={show} onHide={handleClose}>
         <Modal.Header closeButton>
-          <Modal.Title>Add Token Address</Modal.Title>
+          <Modal.Title>Add New Token</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          <InputGroup className="mb-3">
+          <Form>
+            <Form.Group className='mb-3' controlId='formTokenAddress'>
+              <Form.Label>Token Address</Form.Label>
+              <Form.Control type="text" placeholder='0x' onChange={handleAddress} />
+            </Form.Group>          
+            <Form.Group className='mb-3' controlId='formTaxToken'>
+              <Form.Label>Tax Token</Form.Label>
+              <Form.Check aria-label='option 1' onChange={handleTaxToken}></Form.Check>
+            </Form.Group>
+            <Form.Group className='mb-3' controlId='formBuyTax'>
+              <Form.Label>Buy Tax</Form.Label>
+              <Form.Control type="text" placeholder='' onChange={handleBuyTax} />
+            </Form.Group>
+            <Form.Group className='mb-3' controlId='formSellTax'>
+              <Form.Label>Sell Tax</Form.Label>
+              <Form.Control type="text" placeholder='' onChange={handleSellTax} />
+            </Form.Group>
+            <Form.Group className='mb-3' controlId='formUSDLimit'>
+              <Form.Label>USD Limit</Form.Label>
+              <Form.Control type="text" placeholder='' onChange={handleUSDLimit} />
+            </Form.Group>
+          </Form>
+          {/* <InputGroup className="mb-3">
             <InputGroup.Text id="basic-addon3">Address</InputGroup.Text>
             <FormControl id="basic-url1" aria-describedby="basic-addon3" type="text" placeholder="0x" defaultValue={address} onChange={handleAddress} />
-          </InputGroup>
+          </InputGroup> */}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleClose}>
@@ -195,74 +243,72 @@ const TokenList = ({ socket }) => {
                 </InputGroup>
               </div>
             </div>
-            <div className="row">
-              <div className="col-12">
+            <div className='row'>
+              <div className="col-6">
                 <InputGroup className="mb-3">
-                  <InputGroup.Text id="basic-addon3">Min amount</InputGroup.Text>
-                  <Form.Control
-                    id="basic-url"
-                    aria-describedby="basic-addon3"
-                    defaultValue={selectedToken.minAmount}
-                    type="number"
-                    pattern="^[0-9]*[.,].?[0-9]*"
-                    onChange={e =>
-                      setSelectedToken(prev => {
-                        return { ...prev, minAmount: e.target.value };
-                      })
-                    }
-                  />
+                  <InputGroup.Text id="basic-addon3">TaxToken</InputGroup.Text>
+                  <Form.Control aria-describedby="basic-addon3" defaultValue={selectedToken.taxToken} readOnly={true} />
                 </InputGroup>
               </div>
             </div>
-            <div className="row">
-              <div className="col-12">
-                <InputGroup className="mb-3">
-                  <InputGroup.Text id="basic-addon3">Max amount</InputGroup.Text>
-                  <Form.Control
-                    id="basic-url"
-                    aria-describedby="basic-addon3"
-                    defaultValue={selectedToken.maxAmount}
-                    type="number"
-                    pattern="^[0-9]*[.,].?[0-9]*"
-                    onChange={e =>
-                      setSelectedToken(prev => {
-                        return { ...prev, maxAmount: e.target.value };
-                      })
-                    }
-                  />
-                </InputGroup>
-              </div>
-            </div>
-            <div className="row">
-              <div className="col-12">
-                <InputGroup className="mb-3">
-                  <InputGroup.Text id="basic-addon3">{`Benefit limit`}</InputGroup.Text>
-                  <Form.Control
-                    aria-describedby="basic-addon3"
-                    defaultValue={selectedToken.benefitLimit}
-                    type="number"
-                    pattern="^[0-9]*[.,].?[0-9]*"
-                    onChange={e =>
-                      setSelectedToken(prev => {
-                        return { ...prev, benefitLimit: e.target.value };
-                      })
-                    }
-                  />
-                </InputGroup>
-              </div>
-            </div>
+            {selectedToken.taxToken == true? (
+              <>
+                <div className="row">
+                  <div className="col-12">
+                    <InputGroup className="mb-3">
+                      <InputGroup.Text id="basic-addon3">Buy Tax</InputGroup.Text>
+                      <Form.Control
+                        id="basic-url"
+                        aria-describedby="basic-addon3"
+                        defaultValue={selectedToken.buyTax}
+                        type="number"
+                        pattern="^[0-9]*[.,].?[0-9]*"
+                        onChange={e =>
+                          setSelectedToken(prev => {
+                            return { ...prev, buyTax: e.target.value };
+                          })
+                        }
+                      />
+                    </InputGroup>
+                  </div>
+                </div>
+                <div className="row">
+                  <div className="col-12">
+                    <InputGroup className="mb-3">
+                      <InputGroup.Text id="basic-addon3">Sell Tax</InputGroup.Text>
+                      <Form.Control
+                        id="basic-url"
+                        aria-describedby="basic-addon3"
+                        defaultValue={selectedToken.sellTax}
+                        type="number"
+                        pattern="^[0-9]*[.,].?[0-9]*"
+                        onChange={e =>
+                          setSelectedToken(prev => {
+                            return { ...prev, sellTax: e.target.value };
+                          })
+                        }
+                      />
+                    </InputGroup>
+                  </div>
+                </div>
+              </>
+            
+            ): (
+              <>
+              </>
+            )}
             <div className="row">
               <div className="col-12">
                 <InputGroup className="mb-3">
                   <InputGroup.Text id="basic-addon3">{`Swap monitoring limit`}</InputGroup.Text>
                   <Form.Control
                     aria-describedby="basic-addon3"
-                    defaultValue={selectedToken.monitLimit}
+                    defaultValue={selectedToken.usdLimit}
                     type="number"
                     pattern="^[0-9]*[.,].?[0-9]*"
                     onChange={e =>
                       setSelectedToken(prev => {
-                        return { ...prev, monitLimit: e.target.value };
+                        return { ...prev, usdLimit: e.target.value };
                       })
                     }
                   />

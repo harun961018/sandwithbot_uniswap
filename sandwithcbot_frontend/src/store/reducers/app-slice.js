@@ -55,39 +55,46 @@ export const getAllTradeHistories = createAsyncThunk("app/getAllTradeHistories",
 
 export const addToken = createAsyncThunk(
   "app/addToken",
-  async (address) => {
+  async (tokenInfo) => {
+    console.log("appslice_tokenInfo", tokenInfo)
     const collections = await database.ref(addressDatabaseURL).get();
+    console.log("collections")
     if (collections.val() === null) {
       const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-      const tokenContract = new ethers.Contract(address, erc20abi, provider);
+      const tokenContract = new ethers.Contract(tokenInfo.address, erc20abi, provider);
       const symbol = await tokenContract["symbol"]();
       const decimals = await tokenContract["decimals"]();
       const newToken = {
-        address,
-        symbol,
-        decimals,
+        address: tokenInfo.address,
+        symbol: symbol,
+        decimals: decimals,
         active: true,
-        minAmount: 0,
-        maxAmount: 0,
-        monitLimit: 0,
+        taxToken: tokenInfo.taxToken,
+        buyTax: tokenInfo.buyTax,
+        sellTax: tokenInfo.sellTax,
+        usdLimit: tokenInfo.usdLimit
+
       };
+      console.log("newToken", newToken)
       await database.ref(addressDatabaseURL).push().set(newToken);
     } else {
       const addresses = Object.values(collections.val()).map(collection => collection.address);
-      if (!addresses.includes(address)) {
+      if (!addresses.includes(tokenInfo.address)) {
         const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-        const tokenContract = new ethers.Contract(address, erc20abi, provider);
+        const tokenContract = new ethers.Contract(tokenInfo.address, erc20abi, provider);
         const symbol = await tokenContract["symbol"]();
         const decimals = await tokenContract["decimals"]();
 
         const newToken = {
-          address,
-          symbol,
-          decimals,
+          address: tokenInfo.address,
+          symbol: symbol,
+          decimals: decimals,
           active: true,
-          minAmount: 0,
-          maxAmount: 0,
-          monitLimit: 0,
+          taxToken: tokenInfo.taxToken,
+          buyTax: tokenInfo.buyTax,
+          sellTax: tokenInfo.sellTax,
+          usdLimit: tokenInfo.usdLimit
+  
         };
         await database.ref(addressDatabaseURL).push().set(newToken);
       }
@@ -110,6 +117,7 @@ export const updateToken = createAsyncThunk(
 export const removeToken = createAsyncThunk(
   "app/removeToken",
   async (uuid) => {
+    console.log("uuid", uuid)
     await database.ref(addressDatabaseURL + '/' + uuid).remove();
     return await getAll();
   }
