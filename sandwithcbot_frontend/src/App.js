@@ -48,7 +48,7 @@ const App = () => {
                                 <Display socket={socket} />
                             </Tab.Pane>
                             <Tab.Pane eventKey="second">
-                                <TokenList socket={socket} />
+                                <TokenList />
                             </Tab.Pane>
                         </Tab.Content>
                     </Col>

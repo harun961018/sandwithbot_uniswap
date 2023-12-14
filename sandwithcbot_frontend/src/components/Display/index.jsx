@@ -1,5 +1,4 @@
 import { MDBDataTableV5 } from 'mdbreact';
-import { FiMonitor } from 'react-icons/fi';
 import { BsClockHistory } from 'react-icons/bs';
 import { GiReceiveMoney } from 'react-icons/gi';
 import React, { useEffect, useState } from 'react';
@@ -7,7 +6,8 @@ import { useSelector } from 'react-redux';
 import { Button, Modal, Card, Form } from 'react-bootstrap';
 
 import { database } from '../../config/firebase';
-import { historyDatabaseURL } from '../../utils/basic';
+import { historyDatabaseURL, pendingHistoryURL } from '../../utils/basic';
+
 
 const Display = ({ socket }) => {
   const appData = useSelector(state => state.app);
@@ -17,6 +17,7 @@ const Display = ({ socket }) => {
   const [tokenLists, setTokenLists] = useState([]);
   const [priceData, setPriceData] = useState([]);
   const [logData, setLogData] = useState([]);
+  const [pendindData, setPendingData] = useState([]);
   const [executionState, setExecutionState] = useState(false);
   const [slippage, setSlippage] = useState('0.5');
 
@@ -42,6 +43,14 @@ const Display = ({ socket }) => {
       });
     }
   }, [appData.histories]);
+
+  useEffect(() => {
+    if (appData.loading === 'success') {
+      const pendingHistories = appData.pendingHistories;
+      setPendingData(pendingHistories);
+      const dbRef = database.ref(pendingHistoryURL + '/');
+    }
+  }, [appData.pendingHistories])
 
   const updateHistoryTable = data => {
     setLogData(prev => {
@@ -69,11 +78,6 @@ const Display = ({ socket }) => {
     setExecutionState(false);
   };
 
-  const hardStop = () => {
-    socket.emit('bot-hard-stop');
-    setExecutionState(false);
-  }
-
   const clearLog = () => {
     setLogDialogFlog(false);
   };
@@ -85,10 +89,14 @@ const Display = ({ socket }) => {
 
   const tokenSettingData = tokenLists.map(tokenList => {
     const token = { ...tokenList };
-    token.min_amount = tokenList.minAmount;
-    token.max_amount = tokenList.maxAmount;
+    token.buyTax = tokenList.buyTax;
+    token.sellTax = tokenList.sellTax;
+    token.taxToken = String(tokenList.taxToken);
+    token.usdLimit = tokenList.usdLimit;
     return token;
   });
+
+
 
   const tradeHistoryData = logData.map(log => {
     const historyData = {
@@ -111,53 +119,6 @@ const Display = ({ socket }) => {
     return historyData;
   });
 
-  const dataPriceTable = {
-    columns: [
-      {
-        label: 'Token',
-        field: 'symbol',
-      },
-      {
-        label: 'Amount',
-        width: 40,
-        field: 'amount',
-      },
-      {
-        label: '',
-        field: 'direction',
-      },
-      {
-        label: 'Binance',
-        field: 'binance',
-      },
-      {
-        label: 'Fee',
-        field: 'binanceSwapFee',
-      },
-      {
-        label: 'UniswapV2',
-        field: 'uniV2',
-      },
-      {
-        label: 'UniSwapV3',
-        field: 'uniV3',
-      },
-      {
-        label: 'Fee',
-        field: 'uniV3Fee',
-      },
-      {
-        label: 'ETA Profit',
-        field: 'profit',
-      },
-      {
-        label: 'Last Modified',
-        field: 'modified',
-      },
-    ],
-    rows: priceData,
-  };
-
   const dataTokenSettingTable = {
     columns: [
       {
@@ -165,23 +126,50 @@ const Display = ({ socket }) => {
         field: 'symbol',
       },
       {
-        label: 'Min Amount',
-        field: 'min_amount',
+        label: 'Tax Token',
+        field: 'taxToken',
       },
       {
-        label: 'Max Amount',
-        field: 'max_amount',
+        label: 'Buy Tax',
+        field: 'buyTax',
       },
       {
-        label: 'Benefit Limit(USDT)',
-        field: 'benefitLimit',
+        label: 'Sell Tax',
+        field: 'sellTax',
       },
       {
-        label: 'Monitoring Limit',
-        field: 'monitLimit',
+        label: 'USD Limit',
+        field: 'usdLimit',
       },
+
     ],
     rows: tokenSettingData,
+  };
+  const dataTransactionsTable = {
+    columns: [
+      {
+        label: 'Txhash',
+        field: 'txHash'
+      },
+      {
+        label: 'Token',
+        field: 'symbol',
+      },
+      {
+        label: 'Trading Amount',
+        field: 'tokenAmount'
+      },
+      {
+        label: 'Is Profit',
+        field: 'isProfit'
+      },
+      {
+        label: 'Profit',
+        field: 'usdLimit',
+      },
+
+    ],
+    rows: [],
   };
 
   const dataLogTable = {
@@ -201,17 +189,6 @@ const Display = ({ socket }) => {
         field: 'tradeAmount',
         width: 200,
       },
-      {
-        label: 'Buy Exchange',
-        field: 'buyExchange',
-        width: 100,
-      },
-      {
-        label: 'Sell Exchange',
-        field: 'sellExchange',
-        width: 100,
-      },
-
       {
         label: 'Status',
         field: 'status',
@@ -303,15 +280,11 @@ const Display = ({ socket }) => {
   return (
     <div>
       <div className="row">
-        <div className="col-12">
-          <Card bg="light" style={{ height: '20rem', overflow: 'scroll' }} border="primary">
-            <Card.Body>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <h2>
-                  {' '}
-                  <GiReceiveMoney /> &nbsp; Trading Amount
-                </h2>{' '}
-                <div style={{display: "flex"}}>
+        <div className='col-12'>
+          <Button variant={executionState ? 'danger' : 'success'} id="button-addon2" onClick={executionState ? () => stop() : () => start()}>
+            {executionState ? 'Stop' : 'Start'}
+          </Button>
+          {/* <div style={{display: "flex"}}>
                   <Form.Group style={{marginBottom: "0", display: "flex", alignItems: "center"}}>
                     <Form.Control
                       as="select"
@@ -323,16 +296,18 @@ const Display = ({ socket }) => {
                       <option value="1">1</option>
                     </Form.Control>
                   </Form.Group>
-                  <Button variant={executionState ? 'danger' : 'success'} id="button-addon2" onClick={executionState ? () => stop() : () => start()}>
-                    {executionState ? 'Stop' : 'Start'}
-                  </Button>
-                  {
-                    executionState && (
-                      <Button variant={'danger'} id="button-addon3" onClick={() => hardStop()}>
-                        Hard Stop
-                      </Button>)
-                  }
-                </div>
+                 
+                </div> */}
+        </div>
+        <div className="col-12">
+          <Card bg="light" style={{ height: '20rem', overflow: 'scroll' }} border="primary">
+            <Card.Body>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <h2>
+                  {' '}
+                  <GiReceiveMoney /> &nbsp;   Actived Token
+                </h2>{' '}
+                
               </div>
               <div className="col-12">
                 <MDBDataTableV5 hover searching={false} entries={50} pagesAmount={10} data={dataTokenSettingTable} />
@@ -340,20 +315,20 @@ const Display = ({ socket }) => {
             </Card.Body>
           </Card>
           <br />
-          {/* <Card bg="light" style={{ height: '35rem', overflow: 'scroll' }} border="primary" overflow="scroll">
+          <Card bg="light" style={{ height: '20rem', overflow: 'scroll' }} border="primary">
             <Card.Body>
-              <Card.Title>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <h2>
                   {' '}
-                  <FiMonitor /> &nbsp; Token Price Monitor
+                  <GiReceiveMoney /> &nbsp;   Pending Transactions
                 </h2>{' '}
-                <hr />
-              </Card.Title>
-              <MDBDataTableV5 hover entriesOptions={[10, 20, 50, 100, 200, 500, 1000]} paging={false} data={dataPriceTable} materialSearch />
-              <br />
-              <br />
+                
+              </div>
+              <div className="col-12">
+                <MDBDataTableV5 hover searching={false} entries={50} pagesAmount={10} data={dataTransactionsTable} />
+              </div>
             </Card.Body>
-          </Card> */}
+          </Card>
           <br />
           <Card bg="light" style={{ height: '30rem', overflow: 'scroll' }} border="primary">
             <Card.Body>

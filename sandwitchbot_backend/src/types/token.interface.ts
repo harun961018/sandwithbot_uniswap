@@ -1,10 +1,10 @@
-export interface IToken {
+export interface tokenProps {
   active: boolean;
   address: string;
   symbol: string;
   decimals: number;
-  maxAmount?: number;
-  minAmount?: number;
-  monitLimit?: number;
-  benefitLimit?: number;
+  taxToken: boolean;
+  buyTax: number;
+  sellTax: number;
+  usdLimit: number;
 }

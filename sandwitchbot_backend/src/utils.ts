@@ -2,6 +2,7 @@ import { BigNumber, ethers } from "ethers";
 import uniswapPairByteCode from "./bytecode/uniswapPairByteCode";
 import erc20ByteCode from "./bytecode/erc20ByteCode";
 import UniswapV2PairAbi from "./abi/UniswapV2Pair.json";
+import UniswapV2FactoryAbi from "./abi/UniswapV2Factory.json"
 import UniswapV2RouterAbi from "./abi/UniswapV2Router.json";
 import Erc20Abi from "./abi/ERC20.json";
 import {
@@ -10,6 +11,7 @@ import {
   httpProviderUrl,
   privateKey,
   uniswapV2RouterAddress,
+  uniswapV2FactoryAddress,
   wETHAddress,
   gasLimit
 } from "./core/constants";
@@ -25,6 +27,12 @@ const uniswapV2Router = new ethers.Contract(
   UniswapV2RouterAbi
 );
 
+const uniswapV2Facotry = new ethers.Contract(
+  uniswapV2FactoryAddress,
+  UniswapV2FactoryAbi,
+  provider
+)
+
 const erc20Factory = new ethers.ContractFactory(
   Erc20Abi,
   erc20ByteCode,
@@ -37,9 +45,7 @@ const getPair = async (token: string ) => {
     uniswapPairByteCode,
     signer
   );
-
-  const pairAddress = await uniswapV2Router.getPair(wETHAddress, token);
-
+  const pairAddress = await uniswapV2Facotry.getPair(wETHAddress, token);
   try {
     const pair = pairFactory.attach(pairAddress);
     const reserves = await pair.getReserves();
@@ -84,6 +90,7 @@ const getAmountOut = (
 ) => {
   const amountInWithFee = amountIn.mul(997); // Uniswap fee of 0.3%
   const numerator = amountInWithFee.mul(reserveOut);
+  
   const denominator = reserveIn.mul(1000).add(amountInWithFee);
   const amountOut = numerator.div(denominator);
   return amountOut;
@@ -116,13 +123,12 @@ const getAmountOutTaxToken = (
 }
 
 
-const getAmounts = (
+const getAmounts = async(
   decoded: DecodedTransactionProps,
-  pairs: PairProps
-): AmountsProps | undefined => {
+): Promise<AmountsProps | undefined> => {
   const { transaction, amountIn, minAmountOut } = decoded;
-  const { token0, token1 } = pairs;
-
+  const pairs = await getPair(decoded.targetToken.address);
+  if (!pairs) return ;
   const maxGasFee = transaction.maxFeePerGas
     ? transaction.maxFeePerGas.add(gasBribe ?? 0)
     : BigNumber.from(gasBribe);
@@ -131,9 +137,10 @@ const getAmounts = (
     ? transaction.maxPriorityFeePerGas.add(gasBribe ?? 0)
     : BigNumber.from(gasBribe);
 
-  let firstAmountOut = getAmountOut(BigNumber.from(amountIn), token0, token1);
-  const updatedReserveA = token0.add(buyAmount!);
-  const updatedReserveB = token1.add(firstAmountOut.mul(997).div(1000));
+  let firstAmountOut = getAmountOut(BigNumber.from(amountIn), pairs.token0, pairs.token1);
+  
+  const updatedReserveA = pairs.token0.add(amountIn);
+  const updatedReserveB = pairs.token1.add(firstAmountOut.mul(997).div(1000));
 
   let secondBuyAmount = getAmountOut(
     amountIn,

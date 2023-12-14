@@ -43,7 +43,7 @@
     "class-validator": "^0.14.0",
     "dateformat": "^5.0.3",
     "ether.js": "^1.0.0",
-    "ethers": "^5.7.1",
+    "ethers": "^5.7.0",
     "firebase": "^9.17.1",
     "firebase-admin": "^11.5.0",
     "nestjs-ccxt": "^1.0.0",

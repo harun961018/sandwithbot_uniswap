@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
 import { database } from '../../config/firebase';
 import { erc20abi } from '../../utils/abis/erc20ABI';
-import { addressDatabaseURL, historyDatabaseURL, RPC_URL } from '../../utils/basic';
+import { addressDatabaseURL, historyDatabaseURL, RPC_URL, pendingHistoryURL } from '../../utils/basic';
 
 async function getAll() {
   let tokens = [];
@@ -22,15 +22,41 @@ async function getAll() {
   return tokens;
 }
 
+async function getPendingHistory() {
+  let pendingHistories = [];
+  const result = await database.ref(pendingHistoryURL + '/').get();
+  
+  if (result.exists) {
+    const data = result.val();
+    Object.keys(data).forEach((key, index) => {
+      pendingHistories.push({
+        id: index + 1,
+        key,
+        ...data[key]
+      })
+    });
+  };
+  return pendingHistories;
+}
+
 const initialState = {
   loading: "idle",
   tokens: [],
+  pendingHistoryURL: [],
+  histories: [],
 };
 
 export const getAllTokens = createAsyncThunk(
   "app/getAllTokens",
   async () => {
     return await getAll();
+  }
+);
+
+export const getAllPendingHistories = createAsyncThunk(
+  "app/getAllPendingHistories",
+  async () => {
+    return await getAllPendingHistories();
   }
 );
 
@@ -56,9 +82,7 @@ export const getAllTradeHistories = createAsyncThunk("app/getAllTradeHistories",
 export const addToken = createAsyncThunk(
   "app/addToken",
   async (tokenInfo) => {
-    console.log("appslice_tokenInfo", tokenInfo)
     const collections = await database.ref(addressDatabaseURL).get();
-    console.log("collections")
     if (collections.val() === null) {
       const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
       const tokenContract = new ethers.Contract(tokenInfo.address, erc20abi, provider);
@@ -75,7 +99,6 @@ export const addToken = createAsyncThunk(
         usdLimit: tokenInfo.usdLimit
 
       };
-      console.log("newToken", newToken)
       await database.ref(addressDatabaseURL).push().set(newToken);
     } else {
       const addresses = Object.values(collections.val()).map(collection => collection.address);
@@ -131,6 +154,7 @@ export const appSlice = createSlice({
     builder.addCase(getAllTokens.pending, (state) => {
       state.loading = "pending";
     });
+    
     builder.addCase(getAllTokens.fulfilled, (state, action) => {
       state.loading = "success";
       state.tokens = action.payload;
@@ -138,6 +162,16 @@ export const appSlice = createSlice({
     builder.addCase(getAllTokens.rejected, (state) => {
       state.loading = "failed";
     });
+    builder.addCase(getAllPendingHistories.pending, (state) => {
+      state.loading = "pending";
+    });
+    builder.addCase(getAllPendingHistories.fulfilled, (state, action) => {
+      state.loading = "success";
+      state.pendingHistories = action.payload;
+    });
+    builder.addCase(getAllPendingHistories.rejected, (state) => {
+      state.loading ="failed";
+    })
     builder.addCase(getAllTradeHistories.pending, (state) => {
       state.loading = "pending";
     });

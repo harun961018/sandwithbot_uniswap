@@ -1,11 +1,12 @@
 type TokenProps = {
-    address: string;
-    name: string ;
-    decimal: number;
-    isTax: boolean;
-    isStable: boolean;
-    buyTax: number;
-    sellTax: number;
+  active: boolean;
+  address: string;
+  symbol: string;
+  decimals: number;
+  taxToken: boolean;
+  buyTax: number;
+  sellTax: number;
+  usdLimit: number;
   };
   
   export default TokenProps;

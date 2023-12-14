@@ -6,7 +6,7 @@ import { InputGroup, FormControl, Button, Form, Modal } from 'react-bootstrap';
 
 import { addToken, removeToken, updateToken } from '../../store/reducers/app-slice';
 
-const TokenList = ({ socket }) => {
+const TokenList = () => {
   const dispatch = useDispatch();
   const appData = useSelector(state => state.app);
   const [address, setAddress] = useState('');
@@ -33,7 +33,6 @@ const TokenList = ({ socket }) => {
   const handleTaxToken = e => {
     
     if (e.target.checked) {
-      console.log("adssdf", e.target.checked)
       setTaxToken(true)
     } else {
       setTaxToken(false)
@@ -190,15 +189,15 @@ const TokenList = ({ socket }) => {
             </Form.Group>
             <Form.Group className='mb-3' controlId='formBuyTax'>
               <Form.Label>Buy Tax</Form.Label>
-              <Form.Control type="text" placeholder='' onChange={handleBuyTax} />
+              <Form.Control type="number" placeholder='' pattern="^[0-9]*[.,].?[0-9]*" onChange={handleBuyTax} />
             </Form.Group>
             <Form.Group className='mb-3' controlId='formSellTax'>
               <Form.Label>Sell Tax</Form.Label>
-              <Form.Control type="text" placeholder='' onChange={handleSellTax} />
+              <Form.Control type="number" placeholder='' pattern="^[0-9]*[.,].?[0-9]*" onChange={handleSellTax} />
             </Form.Group>
             <Form.Group className='mb-3' controlId='formUSDLimit'>
               <Form.Label>USD Limit</Form.Label>
-              <Form.Control type="text" placeholder='' onChange={handleUSDLimit} />
+              <Form.Control type="number" placeholder='' pattern="^[0-9]*[.,].?[0-9]*" onChange={handleUSDLimit} />
             </Form.Group>
           </Form>
           {/* <InputGroup className="mb-3">
