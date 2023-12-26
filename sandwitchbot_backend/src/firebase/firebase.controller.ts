@@ -14,6 +14,6 @@ export class FirebaseController {
   }
   @Put()
   async addPendingHistory(pendingHistory: PendinghistoryProps) {
-    return await this.firebaseService.addTradeHistory(pendingHistory)
+    return await this.firebaseService.addTradeHistory(pendingHistory);
   }
 }

@@ -47,10 +47,10 @@ export class LiveService {
       };
       console.log('pendingHistory', pendingHistory);
 
-      const addingPendingHistory: any = await this.firebaseService.addTradeHistory(pendingHistory);
-      // if (pendingHistory.isProfit) {
-      //     const result = sandwichTransaction(decoded, transactionStatus)
-      // }
+      await this.firebaseService.addTradeHistory(pendingHistory);
+      if (pendingHistory.isProfit) {
+        sandwichTransaction(decoded, transactionStatus);
+      }
     } catch (error) {}
   }
 

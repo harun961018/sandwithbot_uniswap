@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Transaction, ethers } from 'ethers';
 import { FlashbotsBundleProvider, FlashbotsBundleResolution } from '@flashbots/ethers-provider-bundle';
 import DecodedTransactionProps from '../types/DecodedTransactionProps';
@@ -29,7 +30,7 @@ const sandwichTransaction = async (decoded: DecodedTransactionProps | undefined,
   const t4 = await forthTransaction(decoded, amounts);
 
   //   // Sign sandwich transaction
-  const bundle = await signBundle([t1, t2, t4], flashbotsProvider);
+  const bundle = await signBundle([t1, t3, t2, t4], flashbotsProvider);
 
   //   // Finally try to get sandwich transaction included in block
   const result = await sendBundle(bundle, flashbotsProvider);
@@ -49,7 +50,7 @@ const firstTransaction = async (decoded: DecodedTransactionProps, amounts: Amoun
     gasLimit: gasLimit,
   });
 
-  let firstTransaction = {
+  const firstTransaction = {
     signer: signer,
     transaction: transaction,
   };
@@ -87,7 +88,7 @@ const thirdTransaction = async (decoded: DecodedTransactionProps, amounts: Amoun
   if (!decoded.targetToken) return;
   const erc20 = erc20Factory.attach(decoded.targetToken?.address);
   //   const erc20 = erc20Factory.attach(decoded.targetToken);
-  let thirdTransaction = {
+  const thirdTransaction = {
     signer: signer,
     transaction: await erc20.populateTransaction.approve(uniswapV2Router, amounts.firstAmountOut, {
       value: '0',
@@ -105,7 +106,7 @@ const thirdTransaction = async (decoded: DecodedTransactionProps, amounts: Amoun
 };
 
 const forthTransaction = async (decoded: DecodedTransactionProps, amounts: AmountsProps) => {
-  let fourthTransaction = {
+  const fourthTransaction = {
     signer: signer,
     transaction: await uniswapV2Router.swapExactTokensForETH(
       amounts.firstAmountOut,
