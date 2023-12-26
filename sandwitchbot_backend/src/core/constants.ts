@@ -7,9 +7,9 @@ const privateKey = isMainnet
   ? process.env.MAINNET_WALLET_PRIVATE_KEY
   : process.env.TESTNET_WALLET_PRIVATE_KEY;
 
-const httpProviderUrl = "https://mainnet.infura.io/v3/40ae0f52bbd04bfa858b67bebe0b8e42"
+const httpProviderUrl = process.env.MAINNET_NODE_URL || "https://mainnet.infura.io/v3/40ae0f52bbd04bfa858b67bebe0b8e42"
 
-const wssProviderUrl = "wss://eth-mainnet.g.alchemy.com/v2/qcNa_JVlErovgW-JjJjWBM7CRU6gteUr"
+const wssProviderUrl = process.env.MAINNET_NODE_URL_WSS || "wss://eth-mainnet.g.alchemy.com/v2/qcNa_JVlErovgW-JjJjWBM7CRU6gteUr"
 
 const uniswapUniversalRouterAddress = isMainnet
   ? "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD"

@@ -1,9 +1,7 @@
 import { CacheModule, Module } from '@nestjs/common';
 import { LiveService } from './live.service';
-// import { LiveGateway } from './live.gateway';
+import { LiveGateway } from './live.gateway';
 import { FirebaseService } from 'src/firebase/firebase.service';
-import { FireBaseModule } from 'src/firebase/firebase.module';
-import { LiveController } from './live.controller';
 
 @Module({
   imports: [
@@ -11,8 +9,6 @@ import { LiveController } from './live.controller';
       isGlobal: true,
     }),
   ],
-  controllers: [LiveController],
-  providers: [LiveService, FirebaseService],
-
+  providers: [LiveGateway, LiveService, FirebaseService],
 })
 export class LiveModule {}
