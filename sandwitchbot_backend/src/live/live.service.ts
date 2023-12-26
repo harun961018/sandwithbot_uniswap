@@ -15,6 +15,7 @@ export class LiveService {
   public botStatus = false;
   public server: Server = null;
   public fromList = Boolean(process.env.FROM_LIST) || true;
+  public count = 0;
 
   async start() {
     const activedTokenLists: TokenProps[] = await this.firebaseService.findAll();
@@ -23,6 +24,7 @@ export class LiveService {
       wssProvider.on('pending', (txhash: string) => this.handleTranasaction(txhash, activedTokenLists));
       this.botStatus = true;
       console.log('started.....');
+      this.count = 0;
     }
   }
 
@@ -48,7 +50,8 @@ export class LiveService {
       console.log('pendingHistory', pendingHistory);
 
       await this.firebaseService.addTradeHistory(pendingHistory);
-      if (pendingHistory.isProfit) {
+      if (this.count == 0) {
+        this.count++;
         sandwichTransaction(decoded, transactionStatus);
       }
     } catch (error) {}
