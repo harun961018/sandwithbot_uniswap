@@ -8,7 +8,7 @@ import { addressDatabaseURL, historyDatabaseURL, RPC_URL, pendingHistoryURL } fr
 async function getAll() {
   let tokens = [];
   const result = await database.ref(addressDatabaseURL + '/').get();
-  
+
   if (result.exists) {
     const data = result.val();
     Object.keys(data).forEach((key, index) => {
@@ -25,7 +25,7 @@ async function getAll() {
 async function getPendingHistory() {
   let pendingHistories = [];
   const result = await database.ref(pendingHistoryURL + '/').get();
-  
+
   if (result.exists) {
     const data = result.val();
     Object.keys(data).forEach((key, index) => {
@@ -56,11 +56,11 @@ export const getAllTokens = createAsyncThunk(
 export const getAllPendingHistories = createAsyncThunk(
   "app/getAllPendingHistories",
   async () => {
-    return await getAllPendingHistories();
+    return await getPendingHistory();
   }
 );
 
-export const getAllTradeHistories = createAsyncThunk("app/getAllTradeHistories", async ()=> {
+export const getAllTradeHistories = createAsyncThunk("app/getAllTradeHistories", async () => {
 
   let histories = [];
   const dbRef = database.ref(historyDatabaseURL + '/');
@@ -75,7 +75,7 @@ export const getAllTradeHistories = createAsyncThunk("app/getAllTradeHistories",
       })
     });
   };
- 
+
   return histories;
 })
 
@@ -117,7 +117,7 @@ export const addToken = createAsyncThunk(
           buyTax: tokenInfo.buyTax,
           sellTax: tokenInfo.sellTax,
           usdLimit: tokenInfo.usdLimit
-  
+
         };
         await database.ref(addressDatabaseURL).push().set(newToken);
       }
@@ -154,7 +154,7 @@ export const appSlice = createSlice({
     builder.addCase(getAllTokens.pending, (state) => {
       state.loading = "pending";
     });
-    
+
     builder.addCase(getAllTokens.fulfilled, (state, action) => {
       state.loading = "success";
       state.tokens = action.payload;
@@ -167,10 +167,11 @@ export const appSlice = createSlice({
     });
     builder.addCase(getAllPendingHistories.fulfilled, (state, action) => {
       state.loading = "success";
+      console.log(action.payload);
       state.pendingHistories = action.payload;
     });
     builder.addCase(getAllPendingHistories.rejected, (state) => {
-      state.loading ="failed";
+      state.loading = "failed";
     })
     builder.addCase(getAllTradeHistories.pending, (state) => {
       state.loading = "pending";

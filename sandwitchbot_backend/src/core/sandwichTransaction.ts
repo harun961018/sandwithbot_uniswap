@@ -1,78 +1,53 @@
-import { Transaction, ethers } from "ethers";
-import {
-  FlashbotsBundleProvider,
-  FlashbotsBundleResolution,
-} from "@flashbots/ethers-provider-bundle";
-import DecodedTransactionProps from "../types/DecodedTransactionProps";
-import { uniswapV2Router, getAmounts, getPair, erc20Factory } from "../utils";
-import {
-  chainId,
-  httpProviderUrl,
-  privateKey,
-  wETHAddress,
-  buyAmount,
-  gasLimit
-} from "./constants";
-import AmountsProps from "../types/AmountsProps";
+import { Transaction, ethers } from 'ethers';
+import { FlashbotsBundleProvider, FlashbotsBundleResolution } from '@flashbots/ethers-provider-bundle';
+import DecodedTransactionProps from '../types/DecodedTransactionProps';
+import { uniswapV2Router, getAmounts, getPair, erc20Factory } from '../utils';
+import { chainId, httpProviderUrl, privateKey, wETHAddress, buyAmount, gasLimit } from './constants';
+import AmountsProps from '../types/AmountsProps';
 
 const provider = ethers.getDefaultProvider(httpProviderUrl);
 const signer = new ethers.Wallet(privateKey!, provider);
 const deadline = Math.floor(Date.now() / 1000) + 60 * 60; // 1 hour from now
 
-const sandwichTransaction = async (
-  decoded: DecodedTransactionProps | undefined, amounts:AmountsProps
-): Promise<boolean> => {
-
+const sandwichTransaction = async (decoded: DecodedTransactionProps | undefined, amounts: AmountsProps): Promise<boolean> => {
   if (!amounts) return false;
-  console.log("amounts", amounts)
-  const flashbotsProvider = await FlashbotsBundleProvider.create(
-    provider,
-    signer
-  );
+  console.log('amounts', amounts);
+  const flashbotsProvider = await FlashbotsBundleProvider.create(provider, signer);
 
-   // 1. Swap ETH for tokens
+  // 1. Swap ETH for tokens
   const t1 = await firstTransaction(decoded, amounts);
 
   console.log(t1);
 
-   // 2. Wrap target transacton
+  // 2. Wrap target transacton
   const t2 = secondTransaction(decoded.transaction);
 
   // 3. Approve UniswapV2Router to spend token
-   const t3 = await thirdTransaction(decoded, amounts);
+  const t3 = await thirdTransaction(decoded, amounts);
 
-   // 4. Swap tokens for ETH
-   const t4 = await forthTransaction(decoded, amounts);
+  // 4. Swap tokens for ETH
+  const t4 = await forthTransaction(decoded, amounts);
 
-//   // Sign sandwich transaction
-   const bundle = await signBundle([t1, t2, t4], flashbotsProvider);
+  //   // Sign sandwich transaction
+  const bundle = await signBundle([t1, t2, t4], flashbotsProvider);
 
-//   // Finally try to get sandwich transaction included in block
-   const result = await sendBundle(bundle, flashbotsProvider);
+  //   // Finally try to get sandwich transaction included in block
+  const result = await sendBundle(bundle, flashbotsProvider);
 
-   if (result) console.log("bundle: ", bundle);
+  if (result) console.log('bundle: ', bundle);
 
   return result ?? false;
 };
 
-const firstTransaction = async (
-  decoded: DecodedTransactionProps,
-  amounts: AmountsProps
-) => {
+const firstTransaction = async (decoded: DecodedTransactionProps, amounts: AmountsProps) => {
   console.log(amounts);
-  const transaction = await uniswapV2Router.swapExactETHForTokens(
-    amounts.firstAmountOut,
-    [wETHAddress, decoded.targetToken],
-    signer.address,
-    deadline,
-    {
-      value: buyAmount,
-      type: 2,
-      maxFeePerGas: amounts.maxGasFee,
-      maxPriorityFeePerGas: amounts.priorityFee,
-      gasLimit: gasLimit,
-    }
-  );
+  const transaction = await uniswapV2Router.swapExactETHForTokens(amounts.firstAmountOut, [wETHAddress, decoded.targetToken], signer.address, deadline, {
+    value: buyAmount,
+    type: 2,
+    maxFeePerGas: amounts.maxGasFee,
+    maxPriorityFeePerGas: amounts.priorityFee,
+    gasLimit: gasLimit,
+  });
 
   let firstTransaction = {
     signer: signer,
@@ -95,42 +70,32 @@ const secondTransaction = (transaction: Transaction) => {
 
   try {
     signedMiddleTransaction = {
-      signedTransaction: ethers.utils.serializeTransaction(
-        victimsTransactionWithChainId,
-        {
-          r: victimsTransactionWithChainId.r!,
-          s: victimsTransactionWithChainId.s,
-          v: victimsTransactionWithChainId.v,
-        }
-      ),
+      signedTransaction: ethers.utils.serializeTransaction(victimsTransactionWithChainId, {
+        r: victimsTransactionWithChainId.r!,
+        s: victimsTransactionWithChainId.s,
+        v: victimsTransactionWithChainId.v,
+      }),
     };
   } catch (error: any) {
-    console.log("Error signedMiddleTransaction: ", error);
+    console.log('Error signedMiddleTransaction: ', error);
     return;
   }
   return signedMiddleTransaction;
 };
 
-const thirdTransaction = async (
-  decoded: DecodedTransactionProps,
-  amounts: AmountsProps
-) => {
-  if (!decoded.targetToken) return 
+const thirdTransaction = async (decoded: DecodedTransactionProps, amounts: AmountsProps) => {
+  if (!decoded.targetToken) return;
   const erc20 = erc20Factory.attach(decoded.targetToken?.address);
-//   const erc20 = erc20Factory.attach(decoded.targetToken);
+  //   const erc20 = erc20Factory.attach(decoded.targetToken);
   let thirdTransaction = {
     signer: signer,
-    transaction: await erc20.populateTransaction.approve(
-      uniswapV2Router,
-      amounts.firstAmountOut,
-      {
-        value: "0",
-        type: 2,
-        maxFeePerGas: amounts.maxGasFee,
-        maxPriorityFeePerGas: amounts.priorityFee,
-        gasLimit: gasLimit,
-      }
-    ),
+    transaction: await erc20.populateTransaction.approve(uniswapV2Router, amounts.firstAmountOut, {
+      value: '0',
+      type: 2,
+      maxFeePerGas: amounts.maxGasFee,
+      maxPriorityFeePerGas: amounts.priorityFee,
+      gasLimit: gasLimit,
+    }),
   };
   thirdTransaction.transaction = {
     ...thirdTransaction.transaction,
@@ -139,10 +104,7 @@ const thirdTransaction = async (
   return thirdTransaction;
 };
 
-const forthTransaction = async (
-  decoded: DecodedTransactionProps,
-  amounts: AmountsProps
-) => {
+const forthTransaction = async (decoded: DecodedTransactionProps, amounts: AmountsProps) => {
   let fourthTransaction = {
     signer: signer,
     transaction: await uniswapV2Router.swapExactTokensForETH(
@@ -152,12 +114,12 @@ const forthTransaction = async (
       signer.address,
       deadline,
       {
-        value: "0",
+        value: '0',
         type: 2,
         maxFeePerGas: amounts.maxGasFee,
         maxPriorityFeePerGas: amounts.priorityFee,
         gasLimit: gasLimit,
-      }
+      },
     ),
   };
   fourthTransaction.transaction = {
@@ -167,30 +129,24 @@ const forthTransaction = async (
   return fourthTransaction;
 };
 
-const signBundle = async (
-  transactions: any,
-  flashbotsProvider: FlashbotsBundleProvider
-) => {
+const signBundle = async (transactions: any, flashbotsProvider: FlashbotsBundleProvider) => {
   const transactionsArray = [...transactions];
   const signedBundle = await flashbotsProvider.signBundle(transactionsArray);
   console.log(signedBundle);
   return signedBundle;
 };
 
-const sendBundle = async (
-  bundle: any,
-  flashbotsProvider: FlashbotsBundleProvider
-) => {
+const sendBundle = async (bundle: any, flashbotsProvider: FlashbotsBundleProvider) => {
   const blockNumber = await provider.getBlockNumber();
-  console.log("Simulating...");
+  console.log('Simulating...');
   const simulation = await flashbotsProvider.simulate(bundle, blockNumber + 1);
   //@ts-expect-error
   if (simulation.firstRevert) {
     //@ts-expect-error
-    console.log("Simulation error", simulation.firstRevert);
+    console.log('Simulation error', simulation.firstRevert);
     return false;
   }
-  console.log("Simulation success");
+  console.log('Simulation success');
 
   // 12. Send transactions with flashbots
   let bundleSubmission: { bundleHash: any; wait: () => any };
@@ -198,22 +154,19 @@ const sendBundle = async (
     .sendRawBundle(bundle, blockNumber + 1)
     .then((_bundleSubmission: any) => {
       bundleSubmission = _bundleSubmission;
-      console.log("Bundle submitted", bundleSubmission.bundleHash);
+      console.log('Bundle submitted', bundleSubmission.bundleHash);
       return bundleSubmission.wait();
     })
     .then(async (waitResponse: any) => {
-      console.log("Wait response", FlashbotsBundleResolution[waitResponse]);
+      console.log('Wait response', FlashbotsBundleResolution[waitResponse]);
       if (waitResponse == FlashbotsBundleResolution.BundleIncluded) {
-        console.log("Bundle Included!");
+        console.log('Bundle Included!');
         return true;
-      } else if (
-        waitResponse == FlashbotsBundleResolution.AccountNonceTooHigh
-      ) {
-        console.log("The transaction has been confirmed already");
+      } else if (waitResponse == FlashbotsBundleResolution.AccountNonceTooHigh) {
+        console.log('The transaction has been confirmed already');
       }
       return false;
     });
 };
-
 
 export default sandwichTransaction;

@@ -44,12 +44,8 @@ export class FirebaseService {
 
   async addTradeHistory(pendingHistory: PendinghistoryProps): Promise<any> {
     const historyRef = firebase.ref(this.db, process.env.FIREBASE_PENDING_HISTORY);
-    const res = (await firebase.get(historyRef)).val();
-    console.log('rest', res, process.env.FIREBASE_PENDING_HISTORY);
-    if (!res) {
-      const snap = await firebase.push(historyRef, pendingHistory);
-      return snap.key;
-    }
+    const snap = await firebase.push(historyRef, pendingHistory);
+    return snap.key;
   }
 
   // async updateTradeHistory(key: string, history: any): Promise<void> {

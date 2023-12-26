@@ -3,7 +3,7 @@ import { BsClockHistory } from 'react-icons/bs';
 import { GiReceiveMoney } from 'react-icons/gi';
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { Button, Modal, Card, Form } from 'react-bootstrap';
+import { Button, Modal, Card } from 'react-bootstrap';
 
 import { database } from '../../config/firebase';
 import { historyDatabaseURL, pendingHistoryURL } from '../../utils/basic';
@@ -17,43 +17,34 @@ const Display = ({ socket }) => {
   const [tokenLists, setTokenLists] = useState([]);
   const [priceData, setPriceData] = useState([]);
   const [logData, setLogData] = useState([]);
-  const [pendindData, setPendingData] = useState([]);
+  const [pendingTransactionData, setPendingTransactionData] = useState([]);
   const [executionState, setExecutionState] = useState(false);
-  const [slippage, setSlippage] = useState('0.5');
 
-  useEffect(() => {
-    if (appData.loading === 'success') {
-      const tokens = appData.tokens.filter(token => token.active);
-      setTokenLists(tokens);
-    }
-  }, [appData.tokens]);
-
-  useEffect(() => {
-    if (appData.loading === 'success') {
-      const histories = appData.histories;
-      setLogData(histories);
-      const dbRef = database.ref(historyDatabaseURL + '/');
-      dbRef.on('child_changed', snap => {
-        const data = snap.val();
-        updateHistoryTable(data);
-      });
-      dbRef.on('child_added', snap => {
-        const data = snap.val();
-        updateHistoryTable(data);
-      });
-    }
-  }, [appData.histories]);
-
-  useEffect(() => {
-    if (appData.loading === 'success') {
-      const pendingHistories = appData.pendingHistories;
-      setPendingData(pendingHistories);
-      const dbRef = database.ref(pendingHistoryURL + '/');
-    }
-  }, [appData.pendingHistories])
 
   const updateHistoryTable = data => {
     setLogData(prev => {
+      if(prev.length === 0) {
+        return [data]
+      }
+      let newFlag = true;
+      const updatedData = prev.map(log => {
+        if (log.createdAt === data.createdAt) {
+          newFlag = false;
+          return data;
+        } else {
+          return log;
+        }
+      });
+      if (newFlag) return [...updatedData, data];
+      else return updatedData;
+    });
+  };
+
+  const updatePendingTransactionTable = data => {
+    setPendingTransactionData(prev => {
+      if(prev.length === 0) {
+        return [data]
+      }
       let newFlag = true;
       const updatedData = prev.map(log => {
         if (log.createdAt === data.createdAt) {
@@ -69,7 +60,7 @@ const Display = ({ socket }) => {
   };
 
   const start = () => {
-    socket.emit('start', { slippage });
+    socket.emit('start');
     setExecutionState(true);
   };
 
@@ -86,17 +77,6 @@ const Display = ({ socket }) => {
     setDetailShow(true);
     setSelectedLog(log);
   };
-
-  const tokenSettingData = tokenLists.map(tokenList => {
-    const token = { ...tokenList };
-    token.buyTax = tokenList.buyTax;
-    token.sellTax = tokenList.sellTax;
-    token.taxToken = String(tokenList.taxToken);
-    token.usdLimit = tokenList.usdLimit;
-    return token;
-  });
-
-
 
   const tradeHistoryData = logData.map(log => {
     const historyData = {
@@ -143,33 +123,38 @@ const Display = ({ socket }) => {
       },
 
     ],
-    rows: tokenSettingData,
+    rows: tokenLists,
   };
-  const dataTransactionsTable = {
+
+  const dataPendingTransactionsTable = {
     columns: [
       {
         label: 'Txhash',
-        field: 'txHash'
+        field: 'txhash'
       },
       {
         label: 'Token',
-        field: 'symbol',
+        field: 'token',
       },
       {
         label: 'Trading Amount',
-        field: 'tokenAmount'
+        field: 'amount'
       },
       {
         label: 'Is Profit',
-        field: 'isProfit'
+        field: 'isProfit',
       },
       {
         label: 'Profit',
-        field: 'usdLimit',
+        field: 'profit',
+      },
+      {
+        label: 'Created',
+        field: 'createdAt',
       },
 
     ],
-    rows: [],
+    rows: pendingTransactionData.map((tx) => ({...tx, isProfit: tx.isProfit ? 'True' : 'False'})).reverse(),
   };
 
   const dataLogTable = {
@@ -257,17 +242,55 @@ const Display = ({ socket }) => {
   const receiveBotStatusSignal = data => {
     console.log("data", data);
     setExecutionState(data.status);
-    if(data.slippage) {
-      setSlippage(data.slippage);
-    }
   };
+
   const test = data => {
     console.log(data);
   };
+
+  useEffect(() => {
+    if (appData.loading === 'success') {
+      const tokens = appData.tokens.filter(token => token.active);
+      setTokenLists(tokens);
+    }
+  }, [appData.tokens]);
+
+  useEffect(() => {
+    if (appData.loading === 'success') {
+      const histories = appData.histories;
+      setLogData(histories);
+      const dbRef = database.ref(historyDatabaseURL + '/');
+      dbRef.on('child_changed', snap => {
+        const data = snap.val();
+        updateHistoryTable(data);
+      });
+      dbRef.on('child_added', snap => {
+        const data = snap.val();
+        updateHistoryTable(data);
+      });
+    }
+  }, [appData.histories]);
+
+  useEffect(() => {
+    if (appData.loading === 'success') {
+      setPendingTransactionData(appData.pendingHistories);
+      const dbRef = database.ref(pendingHistoryURL + '/');
+      dbRef.on('child_changed', snap => {
+        const data = snap.val();
+        console.log("update", data)
+        updatePendingTransactionTable(data);
+      });
+      dbRef.on('child_added', snap => {
+        const data = snap.val();
+        console.log("added", data)
+        updatePendingTransactionTable(data);
+      });
+    }
+  }, [appData.pendingHistories])
+  
   useEffect(() => {
     socket.on('bot-status', receiveBotStatusSignal);
     socket.on('price-signal', receivePriceSignal);
-
     socket.on('price-test', test);
 
     return () => {
@@ -325,7 +348,7 @@ const Display = ({ socket }) => {
                 
               </div>
               <div className="col-12">
-                <MDBDataTableV5 hover searching={false} entries={50} pagesAmount={10} data={dataTransactionsTable} />
+                <MDBDataTableV5 hover searching={false} entries={50} pagesAmount={10} data={dataPendingTransactionsTable} />
               </div>
             </Card.Body>
           </Card>

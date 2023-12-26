@@ -6,7 +6,7 @@ import io from "socket.io-client";
 import TopNav from './components/TopNav';
 import Display from './components/Display';
 import TokenList from './components/TokenList';
-import { getAllTokens, getAllTradeHistories } from './store/reducers/app-slice';
+import { getAllTokens, getAllPendingHistories, getAllTradeHistories } from './store/reducers/app-slice';
 import './App.css'
 
 const socket = io(process.env.REACT_APP_SOCKET_SERVER);
@@ -18,6 +18,7 @@ const App = () => {
         socket.emit("message");
         dispatch(getAllTokens());
         dispatch(getAllTradeHistories());
+        dispatch(getAllPendingHistories());
     }, []);
 
     return (

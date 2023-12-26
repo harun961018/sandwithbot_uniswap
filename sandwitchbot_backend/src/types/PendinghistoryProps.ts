@@ -2,9 +2,10 @@ import { BigNumber } from 'ethers';
 type PendinghistoryProps = {
   txhash: string;
   token: string;
-  amount: BigNumber;
+  amount: string;
   isProfit: boolean;
-  profit: BigNumber;
+  profit: string;
+  createdAt?: string;
 };
 
 export default PendinghistoryProps;

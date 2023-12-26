@@ -9,6 +9,9 @@ import { gasBribe, buyAmount, httpProviderUrl, privateKey, uniswapV2RouterAddres
 import DecodedTransactionProps from './types/DecodedTransactionProps';
 import PairProps from './types/PairProps';
 import AmountsProps from './types/AmountsProps';
+import TokenProps from './types/TokenProps';
+
+const READABLE_FORM_LEN = 6;
 
 const provider = ethers.getDefaultProvider(httpProviderUrl);
 const signer = new ethers.Wallet(privateKey, provider);
@@ -89,10 +92,13 @@ const getAmountOutTaxToken = (isbuy: boolean, tax: number, amountIn: BigNumber, 
   return amountOut;
 };
 
-const getAmounts = async (decoded: DecodedTransactionProps): Promise<AmountsProps | undefined> => {
+const getAmounts = async (decoded: DecodedTransactionProps, txHash = ''): Promise<AmountsProps | undefined> => {
   const { transaction, amountIn, minAmountOut } = decoded;
   const pairs = await getPair(decoded.targetToken.address);
-  if (!pairs) return;
+  if (!pairs) {
+    console.log(`${txHash} Pair doesn't exist`);
+    return;
+  }
   const maxGasFee = transaction.maxFeePerGas ? transaction.maxFeePerGas.add(gasBribe ?? 0) : BigNumber.from(gasBribe);
 
   const priorityFee = transaction.maxPriorityFeePerGas ? transaction.maxPriorityFeePerGas.add(gasBribe ?? 0) : BigNumber.from(gasBribe);
@@ -104,17 +110,18 @@ const getAmounts = async (decoded: DecodedTransactionProps): Promise<AmountsProp
 
   const secondBuyAmount = getAmountOut(amountIn, updatedReserveA, updatedReserveB);
 
-  if (secondBuyAmount.lt(minAmountOut)) return;
+  if (secondBuyAmount.lt(minAmountOut)) {
+    console.log(`${txHash} Second Buy Small`);
+    return;
+  }
   const updatedReserveA2 = updatedReserveA.add(amountIn);
   const updatedReserveB2 = updatedReserveB.add(secondBuyAmount.mul(997).div(1000));
 
   const thirdAmountOut = getAmountOut(firstAmountOut, updatedReserveB2, updatedReserveA2);
 
   const wastedAmount = maxGasFee.add(BigNumber.from(maxGasFee)).mul(2).add(amountIn);
-
-  const profitAmount = thirdAmountOut > wastedAmount ? thirdAmountOut.sub(wastedAmount) : wastedAmount.sub(thirdAmountOut);
-
-  const isProfit = thirdAmountOut > wastedAmount;
+  const isProfit = thirdAmountOut.gt(wastedAmount);
+  const profitAmount = thirdAmountOut.sub(wastedAmount);
 
   return {
     maxGasFee,
@@ -127,4 +134,29 @@ const getAmounts = async (decoded: DecodedTransactionProps): Promise<AmountsProp
   };
 };
 
-export { getPair, decodeSwap, getAmounts, uniswapV2Router, erc20Factory };
+const getTokenDetail = async (address: string): Promise<TokenProps> => {
+  const provider = new ethers.providers.JsonRpcProvider(httpProviderUrl);
+  const tokenContract = new ethers.Contract(address, Erc20Abi, provider);
+  const symbol = await tokenContract['symbol']();
+  const decimals = await tokenContract['decimals']();
+  return {
+    address: address,
+    symbol: symbol,
+    decimals: decimals,
+    active: true,
+    taxToken: false,
+    buyTax: 0,
+    sellTax: 0,
+    usdLimit: 0,
+  };
+};
+
+const fromReadableAmount = (amount: number, decimals: number): BigNumber => {
+  return ethers.utils.parseUnits(amount.toString(), decimals);
+};
+
+const toReadableAmount = (rawAmount: number, decimals: number): string => {
+  return ethers.utils.formatUnits(rawAmount, decimals).slice(0, READABLE_FORM_LEN);
+};
+
+export { getPair, decodeSwap, getAmounts, toReadableAmount, fromReadableAmount, getTokenDetail, uniswapV2Router, erc20Factory };
