@@ -14,7 +14,7 @@ export class LiveService {
 
   public botStatus = false;
   public server: Server = null;
-  public fromList = false;
+  public fromList = process.env.FROM_LIST || true;
 
   async start() {
     const activedTokenLists: TokenProps[] = await this.firebaseService.findAll();
